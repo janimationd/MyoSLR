@@ -1,0 +1,1 @@
+This folder is for code that directly comprises the Training game portion of our project.

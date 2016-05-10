@@ -1,0 +1,242 @@
+
+#include <stdio.h>
+#include <curl/curl.h>
+#include "json.hpp"
+
+
+using namespace nlohmann;
+
+void printNonprinting(const char* pstr) {
+   //const char *pstr = "this \t has \v control \n characters";
+   const char *str = pstr;
+   while(*str){
+      switch(*str){
+        case '\v': printf("\\v");break;
+        case '\n': printf("\\n"); break;
+        case '\t': printf("\\t"); break;
+        case '\r': printf("\\r"); break;
+        case '\b': printf("\\b"); break;
+        case '\"': printf("\\\""); break;
+        case '\\': printf("\\\\"); break;
+        //...
+        default: putchar(*str);break;
+      }
+      str++;
+   } 
+   printf("\n");
+} 
+
+
+char* serializeJSON(json j) {
+   const char* jdump = j.dump().c_str();
+   char* output = (char*)malloc(sizeof(char) * strlen(jdump));
+   for(int i = 0; i < strlen(jdump); i++)
+      output[i] = jdump[i];
+   return output;
+} 
+
+
+json createTestJSON() {
+   /*
+   json j = {
+      {"letter","c"},
+      {"emg", {{1,2,3,4,5,6},{1,2,3,4,5,6}}}
+   };
+   */
+   json j;
+   j["letter"] = "c";
+   j["emg"] = {{1,2,3,4,5,6},{1,2,3,4,5,6}};
+   return j;  
+} 
+
+int post(const char* host) {
+   printf("\nTesting POST from '%s'\n", host);
+
+   CURL *curl;
+   CURLcode res;
+   
+   json test = createTestJSON();
+   printf("Sending JSON: '%s'\n", test.dump().c_str());
+   printNonprinting(test.dump().c_str());
+//void printNonprinting(const char* pstr) {
+   //char* testjson="{\"letter\":\"c\",\"emg\":[[1,2,3,4,5,6],[1,2,3,4,5,6]]}";
+   //const char* testjson="{\"emg\":[[1,2,3,4,5,6],[1,2,3,4,5,6]],\"letter\":\"c\"}";
+   char* testjson=serializeJSON(test);
+   //const char* testjson = test.dump().c_str();
+   printf("Sending Test JSON: '%s'\n", testjson);
+   printNonprinting(testjson);
+   //void printNonprinting(const char* pstr) {
+
+   /* In windows, this will init the winsock stuff */ 
+   curl_global_init(CURL_GLOBAL_ALL);
+
+   /* get a curl handle */ 
+   curl = curl_easy_init();
+   if(curl) {
+
+      struct curl_slist *headers;
+      headers = NULL;
+      headers = curl_slist_append(headers, "Content-Type: application/json");
+      headers = curl_slist_append(headers, "Accept: application/json");
+      headers = curl_slist_append(headers, "charsets: utf-8");
+      /* First set the URL that is about to receive our POST. This URL can
+         just as well be a https:// URL if that is what should receive the
+         data. */ 
+      curl_easy_setopt(curl, CURLOPT_URL, host);
+      /* Now specify the POST data */ 
+      //curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
+      //curl_easy_setopt(curl, CURLOPT_POST, 1);
+      //curl_easy_setopt(curl, CURLOPT_POSTFIELDS, test.dump().c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, testjson);
+      //curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, strlen(test.dump().c_str())); 
+      //curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.38.0");
+      //curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.0.3705; .NET CLR 1.1.4322");
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+      //curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 50L);
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+      //curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
+
+      /* Perform the request, res will get the return code */ 
+      res = curl_easy_perform(curl);
+      printf("\n");
+      /* Check for errors */ 
+      if(res != CURLE_OK)
+         fprintf(stderr, "curl_easy_perform() failed: %s\n",
+            curl_easy_strerror(res));
+
+      /* always cleanup */ 
+      curl_easy_cleanup(curl);
+   }
+   curl_global_cleanup();
+   return 0;
+} 
+
+
+void get(const char* host) {
+   printf("Testing GET from '%s'\n", host);
+
+   CURL *curl;
+   CURLcode res;
+   
+   curl = curl_easy_init();
+   if(curl) {
+      curl_easy_setopt(curl, CURLOPT_URL, host);
+      curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+      res = curl_easy_perform(curl);
+      if(res != CURLE_OK)
+         fprintf(stderr, "curl_easy_perform() failed: %s\n",
+            curl_easy_strerror(res));
+      else
+         printf("\n");
+ 
+      curl_easy_cleanup(curl);
+   }
+} 
+
+
+void postJSON(const char* host, json j) {
+   CURL *curl;
+   CURLcode res;
+  
+   const char* jdump = j.dump().c_str();
+   char* output = (char*)malloc(sizeof(char) * strlen(jdump));
+   for(int i = 0; i < strlen(jdump); i++)
+      output[i] = jdump[i];
+
+   curl_global_init(CURL_GLOBAL_ALL);
+   curl = curl_easy_init();
+   if(curl) {
+      struct curl_slist *headers;
+      headers = NULL;
+      headers = curl_slist_append(headers, "Content-Type: application/json");
+      headers = curl_slist_append(headers, "Accept: application/json");
+      headers = curl_slist_append(headers, "charsets: utf-8");
+
+      curl_easy_setopt(curl, CURLOPT_URL, host);
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, output);
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+
+      res = curl_easy_perform(curl);
+      if(res != CURLE_OK)
+         fprintf(stderr, "curl_easy_perform() failed: %s\n",
+            curl_easy_strerror(res));
+      else
+         printf("\n");
+      curl_easy_cleanup(curl);
+   }
+   curl_global_cleanup();
+   free(output);
+} 
+
+
+
+int main() {
+   
+   std::string gethost = "http://104.131.142.121/";
+   std::string posthost = "http://104.131.142.121/trainer/letter";
+  
+   /*  
+   std::string gethost = "http://127.0.0.1:8000";
+   std::string posthost = gethost;
+   */
+
+   get(gethost.c_str());
+   post(posthost.c_str());
+
+   json test = createTestJSON();
+
+   std::cout << test.dump() << "\n";
+
+   /*
+   printf("Json Test\n");
+
+   // create an empty structure (null)
+   json j;
+
+   // add a number that is stored as double (note the implicit conversion of j to an object)
+   j["pi"] = 3.141;
+
+   // add a Boolean that is stored as bool
+   j["happy"] = true;
+
+   // add a string that is stored as std::string
+   j["name"] = "Niels";
+
+   // add another null object by passing nullptr
+   j["nothing"] = nullptr;
+
+   // add an object inside the object
+   j["answer"]["everything"] = 42;
+
+   // add an array that is stored as std::vector (using an initializer list)
+   j["list"] = { 1, 0, 2 };
+
+   // add another object (using an initializer list of pairs)
+   j["object"] = { {"currency", "USD"}, {"value", 42.99} };
+
+   std::cout << j << "\n";
+
+   // instead, you could also write (which looks very similar to the JSON above)
+   json j2 = {
+     {"pi", 3.141},
+     {"happy", true},
+     {"name", "Niels"},
+     {"nothing", nullptr},
+     {"answer", {
+       {"everything", 42}
+     }},
+     {"list", {1, 0, 2}},
+     {"object", {
+       {"currency", "USD"},
+       {"value", 42.99}
+     }}
+   };
+
+   std::cout << j2 << "\n";
+   */
+
+   return 0;
+} 
+
+
