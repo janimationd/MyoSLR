@@ -1,6 +1,9 @@
 from flask import Flask
 from flask import request
 from flask import jsonify
+import sys
+sys.path.append('~/Dev/CalPoly/AI/proj/MyoSLR')
+
 from Brains import translator, trainer
 
 application = Flask(__name__)
