@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#define HOST_URL "http://104.131.142.121/trainer/letter"
+#define HOST_URL "http://104.131.142.121/translator/letter"
 
 
 using namespace nlohmann;

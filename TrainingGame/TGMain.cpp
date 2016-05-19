@@ -98,7 +98,7 @@ public:
   std::vector<emg_data> sampleList;
 };
 
-// sends Myo armband data along with a character to the NN server
+// sends Myo armband data to the NN server
 void sendData(char c, DataCollector *dc) {
   std::vector<emg_data> samples = dc->getAndClearEMGDataList();
   json j = make_emg_json(samples);
