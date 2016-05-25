@@ -1,4 +1,4 @@
-import svm_predictor
-
+#import svm_predictor
+import nn_predictor
 def letter(data):
-	return svm_predictor.predict(data['emg'])
+	return nn_predictor.predict(data['emg'])
