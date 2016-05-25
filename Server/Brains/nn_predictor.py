@@ -81,5 +81,4 @@ def predict(emg):
     global y
     X = transform(emg)
     emg_y = y.eval(feed_dict={x:[X]})[0]
-    print chr(np.argmax(emg_y) + ord('A'))
-    return chr(np.argmax(emg_y) + ord('A'))
+    return emg_y
