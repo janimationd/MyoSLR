@@ -8552,8 +8552,6 @@ basic_json_parser_63:
             // temporarily store the type to avoid unecessary bitfield access
             value_t type;
 
-#undef max
-
             // look for sign
             if (*curptr == '-')
             {
@@ -8570,10 +8568,6 @@ basic_json_parser_63:
                     curptr++;
                 }
             }
-
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
 
             // count the significant figures
             for (; curptr < m_cursor; curptr++)
